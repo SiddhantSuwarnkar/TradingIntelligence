@@ -4,7 +4,7 @@ NexusTrade is a premium, secure, and fully responsive **Trade Watchlist & Notes*
 
 ---
 
-## 🎨 Premium UI & Design Aesthetics
+## Premium UI & Design Aesthetics
 
 NexusTrade features a high-fidelity visual experience built on the following modern design principles:
 * **Unified Cyber Theme**: Deep obsidian backdrop (`#030712`) enriched with glowing neon-indigo and cyber-cyan ambient blur rings.
@@ -20,7 +20,7 @@ NexusTrade features a high-fidelity visual experience built on the following mod
 
 ---
 
-## ⚡ Tech Stack
+## Tech Stack
 
 * **Backend**: Django, Django REST Framework (DRF), SimpleJWT, dj-database-url (dynamic SQLite/Postgres swap).
 * **Frontend**: React.js (Vite), Tailwind CSS v4, Lucide React (icons), React Router.
@@ -29,7 +29,7 @@ NexusTrade features a high-fidelity visual experience built on the following mod
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### 1. Prerequisites
 Ensure you have **Python 3.10+** and **Node.js 18+** installed (or Docker for compose deployment).
@@ -95,7 +95,7 @@ To launch the entire fullstack portal in containers:
 
 ---
 
-## 🔑 Evaluator Credentials
+## Evaluator Credentials
 
 The frontend login screen features **Quick Evaluation Access buttons** to log in automatically. You can click them directly, or type:
 
@@ -107,7 +107,7 @@ The frontend login screen features **Quick Evaluation Access buttons** to log in
 
 ---
 
-## 🛡️ Security & Architecture Implementations
+## Security & Architecture Implementations
 
 ### 1. Safe Token Storage (Hybrid Model)
 * **Access Tokens** are stored strictly **in-memory** (in the React state of the `AuthProvider`) and are never written to `localStorage` or `cookies` to protect against XSS token harvesting.
@@ -125,7 +125,7 @@ The frontend login screen features **Quick Evaluation Access buttons** to log in
 
 ---
 
-## 📈 Scalability & Production Readiness
+## Scalability & Production Readiness
 
 ### 1. Database Flexibility (PostgreSQL Support)
 * The application runs on local **SQLite** by default.
