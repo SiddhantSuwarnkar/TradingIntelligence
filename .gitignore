@@ -1,0 +1,9 @@
+# Django secrets and environment
+.env
+db.sqlite3
+__pycache__/
+*.pyc
+
+# React dependencies
+node_modules/
+dist/
