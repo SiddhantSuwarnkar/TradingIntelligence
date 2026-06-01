@@ -292,16 +292,16 @@ const Dashboard = () => {
                     </span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                     {/* User Profile Info Tag */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-border bg-slate-900/40">
+                    <div className="flex items-center gap-2 px-2.5 py-1.5 sm:px-3 rounded-full border border-brand-border bg-slate-900/40">
                         {user?.role === 'admin' ? (
-                            <Shield className="w-3.5 h-3.5 text-neon-cyan shrink-0 animate-pulse" />
+                            <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neon-cyan shrink-0 animate-pulse" />
                         ) : (
-                            <User className="w-3.5 h-3.5 text-neon-purple shrink-0" />
+                            <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neon-purple shrink-0" />
                         )}
-                        <span className="text-xs font-semibold text-slate-200">{user?.username}</span>
-                        <span className={`text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-full ${user?.role === 'admin' ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/20' : 'bg-slate-800 text-slate-400'}`}>
+                        <span className="text-xs font-semibold text-slate-200 max-w-[65px] sm:max-w-none truncate">{user?.username}</span>
+                        <span className={`hidden sm:inline-block text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-full ${user?.role === 'admin' ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/20' : 'bg-slate-800 text-slate-400'}`}>
                             {user?.role}
                         </span>
                     </div>
@@ -310,10 +310,10 @@ const Dashboard = () => {
                     <button
                         onClick={logout}
                         id="logout-btn"
-                        className="flex items-center gap-2 py-2 px-4 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-950/65 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer shadow"
+                        className="flex items-center gap-2 p-2.5 sm:py-2 sm:px-4 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-955/65 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer shadow"
                     >
-                        <LogOut className="w-3.5 h-3.5 text-neon-rose" />
-                        <span>Sign Out</span>
+                        <LogOut className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-neon-rose" />
+                        <span className="hidden sm:inline">Sign Out</span>
                     </button>
                 </div>
             </nav>
@@ -350,7 +350,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Dashboard Metrics Grid (5-column layout displaying aggregate signals) */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 animate-slide-up">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 animate-slide-up">
                     <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-total">
                         <div className="text-[10px] font-bold text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
                             <Database className="w-3.5 h-3.5 text-neon-indigo" />
@@ -425,8 +425,8 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Table View */}
-                    <div className="overflow-x-auto">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full border-collapse text-left text-slate-300">
                             <thead>
                                 <tr className="border-b border-brand-border bg-slate-950/60 text-[10px] uppercase font-bold text-slate-400 tracking-widest">
@@ -541,6 +541,108 @@ const Dashboard = () => {
                         </table>
                     </div>
 
+                    {/* Mobile Card-Based Grid View */}
+                    <div className="block md:hidden divide-y divide-brand-border/40 bg-slate-950/5">
+                        {loading ? (
+                            <div className="px-6 py-12 text-center text-slate-400">
+                                <div className="flex items-center justify-center gap-2">
+                                    <RefreshCw className="w-4 h-4 animate-spin text-neon-cyan" />
+                                    <span className="font-semibold uppercase tracking-wider text-xs">Loading records...</span>
+                                </div>
+                            </div>
+                        ) : notes.length === 0 ? (
+                            <div className="px-6 py-12 text-center text-slate-500 text-sm">
+                                No trade notes created yet. Click "Create Note" to add one!
+                            </div>
+                        ) : (
+                            notes.map((note) => {
+                                const canModify = note.username === user?.username;
+
+                                let actionBadge = '';
+                                if (note.action === 'BUY') actionBadge = 'bg-neon-emerald/10 text-neon-emerald border-neon-emerald/20 glow-buy';
+                                else if (note.action === 'SELL') actionBadge = 'bg-neon-rose/10 text-neon-rose border-neon-rose/20 glow-sell';
+                                else if (note.action === 'HOLD') actionBadge = 'bg-neon-amber/10 text-neon-amber border-neon-amber/20 glow-hold';
+                                else actionBadge = 'bg-slate-800/40 text-slate-350 border-slate-700/50';
+
+                                return (
+                                    <div key={note.id} className="p-5 space-y-4 hover:bg-slate-900/10 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded bg-slate-900/60 flex items-center justify-center border border-brand-border text-xs font-extrabold text-neon-cyan">
+                                                    {note.asset_symbol.substring(0, 2)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-white tracking-wider font-display text-sm">{note.asset_symbol}</div>
+                                                    <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 font-semibold">
+                                                        <Calendar className="w-3 h-3 text-slate-600" />
+                                                        <span>
+                                                            {new Date(note.created_at).toLocaleDateString(undefined, {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[9px] tracking-wide font-extrabold px-2.5 py-1 rounded-full border ${actionBadge}`}>
+                                                {note.action}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950/20 p-2.5 rounded-xl border border-brand-border/40">
+                                            <div>
+                                                <div className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">Price Target</div>
+                                                <div className="font-mono font-semibold text-slate-200 mt-0.5">
+                                                    {note.price_target ? `$${parseFloat(note.price_target).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}` : '—'}
+                                                </div>
+                                            </div>
+                                            {user?.role === 'admin' && (
+                                                <div>
+                                                    <div className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">Analyst</div>
+                                                    <div className="font-semibold text-slate-200 mt-0.5 truncate">
+                                                        {note.username}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <p className="text-xs text-slate-350 leading-relaxed font-medium bg-slate-950/10 p-3 rounded-xl border border-brand-border/30">
+                                            {note.note}
+                                        </p>
+
+                                        <div className="flex items-center justify-between pt-1">
+                                            <div>
+                                                {!canModify && (
+                                                    <span className="text-[10px] text-slate-600 uppercase font-bold tracking-wider select-none">Read-only</span>
+                                                )}
+                                            </div>
+                                            {canModify && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => openEditModal(note)}
+                                                        className="flex items-center gap-1 py-1.5 px-2.5 rounded-lg border border-brand-border bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-neon-cyan hover:border-neon-cyan/20 transition-all cursor-pointer"
+                                                    >
+                                                        <Edit2 className="w-3 h-3" />
+                                                        <span>Edit</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openDeleteModal(note)}
+                                                        className="flex items-center gap-1 py-1.5 px-2.5 rounded-lg border border-brand-border bg-slate-955 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-neon-rose hover:border-neon-rose/20 transition-all cursor-pointer"
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
+                                                        <span>Delete</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="p-4 border-t border-brand-border bg-slate-950/40 flex items-center justify-between">
@@ -570,8 +672,8 @@ const Dashboard = () => {
 
             {/* CREATE TRADE NOTE MODAL */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
+                <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
                         <button
                             onClick={() => setShowCreateModal(false)}
                             className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -678,7 +780,7 @@ const Dashboard = () => {
             {/* EDIT TRADE NOTE MODAL */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
+                    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
                         <button
                             onClick={() => setShowEditModal(false)}
                             className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -785,7 +887,7 @@ const Dashboard = () => {
             {/* DELETE VERIFICATION MODAL */}
             {showDeleteModal && (
                 <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-md rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl animate-scale-up text-center">
+                    <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl animate-scale-up text-center">
                         <div className="w-12 h-12 rounded-full bg-neon-rose/10 flex items-center justify-center text-neon-rose mx-auto mb-4 border border-neon-rose/20">
                             <AlertTriangle className="w-6 h-6" />
                         </div>
