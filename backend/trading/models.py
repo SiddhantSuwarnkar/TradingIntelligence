@@ -13,9 +13,11 @@ class TradeNote(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='trade_notes',
-        db_index=True  # Django automatically indexes FKs; making it explicit.
+        db_index=True  # Keep explicit index on relationship mapping
     )
-    asset_symbol = models.CharField(max_length=15, db_index=True)  # Indexing for query speed
+    
+    # Index symbol for fast swing/signal search lookups
+    asset_symbol = models.CharField(max_length=15, db_index=True)
     action = models.CharField(max_length=10, choices=ACTION_CHOICES, default='WATCH')
     note = models.TextField()
     price_target = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)

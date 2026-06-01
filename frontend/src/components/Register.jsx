@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, Mail, ShieldAlert, BarChart2 } from 'lucide-react';
+import { Lock, User, Mail, BarChart2 } from 'lucide-react';
 import Toast from './Toast';
 
 const Register = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('user');
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState({ message: '', type: 'success' });
@@ -26,7 +25,8 @@ const Register = () => {
         }
 
         setSubmitting(true);
-        const res = await register(username.trim(), email.trim(), password.trim(), role);
+        // Register standard user strictly (role selection is blocked from public endpoints)
+        const res = await register(username.trim(), email.trim(), password.trim());
         setSubmitting(false);
 
         if (res.success) {
@@ -48,11 +48,11 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden bg-slate-950">
-            {/* Ambient gradients */}
+            {/* Ambient background glows */}
             <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-cyan-500/10 blur-[100px] pointer-events-none"></div>
             <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 rounded-full bg-violet-500/10 blur-[100px] pointer-events-none"></div>
 
-            {/* Register Card */}
+            {/* Registration Card */}
             <div className="w-full max-w-md p-8 rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl shadow-2xl relative z-10">
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 mb-3 animate-pulse">
@@ -82,7 +82,7 @@ const Register = () => {
                                 required
                             />
                         </div>
-                        {errors.username && <p className="text-rose-455 text-xs mt-1">{errors.username[0]}</p>}
+                        {errors.username && <p className="text-rose-400 text-xs mt-1">{errors.username[0]}</p>}
                     </div>
 
                     {/* Email Input */}
@@ -129,30 +129,6 @@ const Register = () => {
                         {errors.password && <p className="text-rose-455 text-xs mt-1">{errors.password[0]}</p>}
                     </div>
 
-                    {/* Role Selector */}
-                    <div>
-                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5" htmlFor="role">
-                            Analyst Role
-                        </label>
-                        <div className="relative">
-                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
-                                <ShieldAlert className="w-4 h-4" />
-                            </span>
-                            <select
-                                id="role"
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all appearance-none cursor-pointer"
-                            >
-                                <option value="user">Standard Analyst (Default)</option>
-                                <option value="admin">Administrator / Principal Analyst</option>
-                            </select>
-                            <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 pointer-events-none">
-                                ▾
-                            </span>
-                        </div>
-                    </div>
-
                     <button
                         type="submit"
                         disabled={submitting}
@@ -165,7 +141,7 @@ const Register = () => {
 
                 <p className="text-sm text-slate-400 mt-6 text-center">
                     Already registered?{' '}
-                    <Link to="/login" className="text-cyan-455 hover:underline hover:text-cyan-300 font-medium">
+                    <Link to="/login" className="text-cyan-400 hover:underline hover:text-cyan-300 font-medium">
                         Sign In
                     </Link>
                 </p>

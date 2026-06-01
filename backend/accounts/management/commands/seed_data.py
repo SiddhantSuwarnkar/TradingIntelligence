@@ -6,12 +6,12 @@ from decimal import Decimal
 User = get_user_model()
 
 class Command(BaseCommand):
-    help = 'Seeds the database with test accounts (admin & standard users) and initial trade notes.'
+    help = 'Seeds the database with test accounts and realistic trade notes.'
 
     def handle(self, *args, **options):
-        self.stdout.write('Seeding database...')
+        self.stdout.write('Seeding database records...')
 
-        # 1. Create Users
+        # Create admin superuser
         admin_user, created = User.objects.get_or_create(
             username='admin',
             email='admin@primetrade.ai',
@@ -21,9 +21,8 @@ class Command(BaseCommand):
             admin_user.set_password('adminpassword')
             admin_user.save()
             self.stdout.write(self.style.SUCCESS('Created admin user: admin / adminpassword'))
-        else:
-            self.stdout.write('Admin user already exists.')
 
+        # Create standard analyst 1
         analyst1, created = User.objects.get_or_create(
             username='analyst1',
             email='analyst1@primetrade.ai',
@@ -33,9 +32,8 @@ class Command(BaseCommand):
             analyst1.set_password('analystpassword')
             analyst1.save()
             self.stdout.write(self.style.SUCCESS('Created analyst1 user: analyst1 / analystpassword'))
-        else:
-            self.stdout.write('Analyst1 user already exists.')
 
+        # Create standard analyst 2
         analyst2, created = User.objects.get_or_create(
             username='analyst2',
             email='analyst2@primetrade.ai',
@@ -45,45 +43,41 @@ class Command(BaseCommand):
             analyst2.set_password('analystpassword')
             analyst2.save()
             self.stdout.write(self.style.SUCCESS('Created analyst2 user: analyst2 / analystpassword'))
-        else:
-            self.stdout.write('Analyst2 user already exists.')
 
-        # 2. Create Trade Notes
-        # Clear existing notes to make seeding clean and repeatable
+        # Reset notes for seed run
         TradeNote.objects.all().delete()
-        self.stdout.write('Cleared existing trade notes.')
 
-        # Analyst 1 Notes
+        # Analyst 1 Notes (Pragmatic shorthand notes)
         notes_analyst1 = [
             {
                 'asset_symbol': 'BTC',
                 'action': 'BUY',
                 'price_target': Decimal('92500.00'),
-                'note': 'BTC broke key resistance at $90,000, daily close looks strong. Targeting $100,000.'
+                'note': 'BTC broke key res at 90k, daily close looks strong. targeting 100k.'
             },
             {
                 'asset_symbol': 'ETH',
                 'action': 'WATCH',
                 'price_target': Decimal('3200.00'),
-                'note': 'Gas fees are hitting multi-month lows. Watching for a consolidation pattern break above $3,200.'
+                'note': 'gas fees hitting multi-month lows. watching for break above 3.2k.'
             },
             {
                 'asset_symbol': 'SOL',
                 'action': 'SELL',
                 'price_target': Decimal('185.50'),
-                'note': 'RSI is overbought on the 4H and daily charts. Taking profits here.'
+                'note': 'RSI is overbought on 4h/daily. taking profit here, wait for pullback'
             },
             {
                 'asset_symbol': 'LINK',
                 'action': 'BUY',
                 'price_target': Decimal('22.00'),
-                'note': 'Chainlink CCIP integration expanding rapidly. Accumulating on retests of support.'
+                'note': 'CCIP integration expanding. buying on support retests.'
             },
             {
                 'asset_symbol': 'AVAX',
                 'action': 'HOLD',
                 'price_target': Decimal('35.00'),
-                'note': 'Subnet activity is stable. Holding positions until testnet upgrade.'
+                'note': 'subnet activity stable. holding till testnet upgrade.'
             }
         ]
 
@@ -96,23 +90,23 @@ class Command(BaseCommand):
                 'asset_symbol': 'DOT',
                 'action': 'HOLD',
                 'price_target': Decimal('6.50'),
-                'note': 'Waiting for Polkadot 2.0 coretime updates before making major trade actions.'
+                'note': 'waiting for polkadot 2.0 coretime updates before making major moves.'
             },
             {
                 'asset_symbol': 'NEAR',
                 'action': 'BUY',
                 'price_target': Decimal('7.80'),
-                'note': 'AI narrative in crypto remains strong. Near protocol is leading in developer count.'
+                'note': 'AI narrative in crypto still strong. Near leading in dev counts.'
             },
             {
                 'asset_symbol': 'BTC',
                 'action': 'WATCH',
                 'price_target': Decimal('89000.00'),
-                'note': 'Watching for pullback to support line at $89k to re-enter long positions.'
+                'note': 'look to long pullbacks to support line at 89k'
             }
         ]
 
         for item in notes_analyst2:
             TradeNote.objects.create(user=analyst2, **item)
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully seeded {len(notes_analyst1) + len(notes_analyst2)} trade notes!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded trade notes!'))

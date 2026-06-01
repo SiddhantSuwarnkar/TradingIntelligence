@@ -232,6 +232,20 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/notes/stats/:
+    get:
+      operationId: notes_stats_retrieve
+      tags:
+      - notes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeNote'
+          description: ''
 components:
   schemas:
     ActionEnum:
@@ -316,14 +330,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-    RoleEnum:
-      enum:
-      - admin
-      - user
-      type: string
-      description: |-
-        * `admin` - Admin
-        * `user` - User
     TokenRefresh:
       type: object
       properties:
@@ -399,10 +405,6 @@ components:
         password:
           type: string
           writeOnly: true
-        role:
-          allOf:
-          - $ref: '#/components/schemas/RoleEnum'
-          default: user
       required:
       - id
       - password

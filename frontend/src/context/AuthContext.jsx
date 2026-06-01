@@ -6,18 +6,47 @@ const API_BASE = 'http://localhost:8000/api/v1';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [tokens, setTokens] = useState(null);
+    const [accessToken, setAccessToken] = useState(null); // access token kept strictly in-memory
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Load session credentials from local storage
-        const storedUser = localStorage.getItem('pt_user');
-        const storedTokens = localStorage.getItem('pt_tokens');
-        if (storedUser && storedTokens) {
-            setUser(JSON.parse(storedUser));
-            setTokens(JSON.parse(storedTokens));
+    const refreshAccessToken = async (storedRefresh) => {
+        const refreshVal = storedRefresh || localStorage.getItem('pt_refresh');
+        if (!refreshVal) {
+            logout();
+            return null;
         }
-        setLoading(false);
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: refreshVal }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Session has expired.');
+            }
+
+            const data = await response.json();
+            setAccessToken(data.access); // load fresh access token in state
+            return data.access;
+        } catch (error) {
+            logout();
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        const initAuth = async () => {
+            const storedUser = localStorage.getItem('pt_user');
+            const storedRefresh = localStorage.getItem('pt_refresh');
+            if (storedUser && storedRefresh) {
+                setUser(JSON.parse(storedUser));
+                await refreshAccessToken(storedRefresh);
+            }
+            setLoading(false);
+        };
+        initAuth();
     }, []);
 
     const login = async (username, password) => {
@@ -35,13 +64,12 @@ export const AuthProvider = ({ children }) => {
 
             const { access, refresh, role, email } = data;
             const userData = { username, role, email };
-            const tokenData = { access, refresh };
 
             setUser(userData);
-            setTokens(tokenData);
+            setAccessToken(access); // set in-memory state
 
             localStorage.setItem('pt_user', JSON.stringify(userData));
-            localStorage.setItem('pt_tokens', JSON.stringify(tokenData));
+            localStorage.setItem('pt_refresh', refresh); // Only write refresh token
 
             return { success: true };
         } catch (error) {
@@ -49,12 +77,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (username, email, password, role) => {
+    const register = async (username, email, password) => {
         try {
             const response = await fetch(`${API_BASE}/auth/register/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, role }),
+                body: JSON.stringify({ username, email, password }),
             });
 
             const data = await response.json();
@@ -69,64 +97,28 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         setUser(null);
-        setTokens(null);
+        setAccessToken(null);
         localStorage.removeItem('pt_user');
-        localStorage.removeItem('pt_tokens');
-    };
-
-    const refreshAccessToken = async () => {
-        let currentTokens = tokens;
-        if (!currentTokens) {
-            const stored = localStorage.getItem('pt_tokens');
-            if (stored) currentTokens = JSON.parse(stored);
-        }
-
-        if (!currentTokens || !currentTokens.refresh) {
-            logout();
-            return null;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/refresh/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh: currentTokens.refresh }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Refresh token has expired');
-            }
-
-            const data = await response.json();
-            const updatedTokens = {
-                ...currentTokens,
-                access: data.access,
-            };
-
-            setTokens(updatedTokens);
-            localStorage.setItem('pt_tokens', JSON.stringify(updatedTokens));
-            return data.access;
-        } catch (error) {
-            logout();
-            return null;
-        }
+        localStorage.removeItem('pt_refresh');
     };
 
     const fetchWithAuth = async (url, options = {}) => {
-        let currentTokens = tokens;
-        if (!currentTokens) {
-            const stored = localStorage.getItem('pt_tokens');
-            if (stored) currentTokens = JSON.parse(stored);
+        let currentAccess = accessToken;
+        if (!currentAccess) {
+            const storedRefresh = localStorage.getItem('pt_refresh');
+            if (storedRefresh) {
+                currentAccess = await refreshAccessToken(storedRefresh);
+            }
         }
 
-        if (!currentTokens || !currentTokens.access) {
+        if (!currentAccess) {
             logout();
-            throw new Error('No access token found. Please log in.');
+            throw new Error('No valid session found. Please log in.');
         }
 
         options.headers = {
             ...options.headers,
-            'Authorization': `Bearer ${currentTokens.access}`,
+            'Authorization': `Bearer ${currentAccess}`,
         };
 
         let response = await fetch(url, options);
@@ -144,7 +136,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, tokens, loading, login, register, logout, fetchWithAuth }}>
+        <AuthContext.Provider value={{ user, accessToken, loading, login, register, logout, fetchWithAuth }}>
             {children}
         </AuthContext.Provider>
     );

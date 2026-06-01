@@ -19,6 +19,9 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ message: '', type: 'success' });
 
+    // Database aggregate stats state
+    const [stats, setStats] = useState({ total: 0, buy: 0, sell: 0, watch: 0 });
+
     // Modals visibility state
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -34,6 +37,24 @@ const Dashboard = () => {
     });
     const [formErrors, setFormErrors] = useState({});
     const [modalSubmitting, setModalSubmitting] = useState(false);
+
+    // Fetch database stats (pagination-resilient)
+    const loadStats = async () => {
+        try {
+            const response = await fetchWithAuth('http://localhost:8000/api/v1/notes/stats/');
+            if (response.ok) {
+                const data = await response.json();
+                setStats({
+                    total: data.total || 0,
+                    buy: data.buy || 0,
+                    sell: data.sell || 0,
+                    watch: data.watch || 0
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load dashboard metrics:', error);
+        }
+    };
 
     // Load data from API
     const loadNotes = async (page = 1, symbol = '') => {
@@ -62,6 +83,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         loadNotes(1);
+        loadStats();
     }, []);
 
     // Search trigger
@@ -153,6 +175,7 @@ const Dashboard = () => {
                 setToast({ message: `Successfully added ${data.asset_symbol} trade note!`, type: 'success' });
                 setShowCreateModal(false);
                 loadNotes(1, searchSymbol); // Refresh list
+                loadStats(); // Update dashboard metric stats
             } else {
                 setFormErrors(data);
                 setToast({ message: 'Validation failed. Please check inputs.', type: 'error' });
@@ -175,8 +198,9 @@ const Dashboard = () => {
         };
 
         try {
+            // REST compliance: Using PATCH for partial updates instead of PUT
             const response = await fetchWithAuth(`http://localhost:8000/api/v1/notes/${activeNote.id}/`, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
@@ -186,6 +210,7 @@ const Dashboard = () => {
                 setToast({ message: `Updated ${data.asset_symbol} note successfully.`, type: 'success' });
                 setShowEditModal(false);
                 loadNotes(currentPage, searchSymbol); // Keep on current page
+                loadStats(); // Update stats in case signal action has changed
             } else {
                 setFormErrors(data);
                 setToast({ message: 'Validation failed. Please check inputs.', type: 'error' });
@@ -210,6 +235,7 @@ const Dashboard = () => {
                 // If we deleted the last item on the page, go back a page
                 const newPage = (notes.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
                 loadNotes(newPage, searchSymbol);
+                loadStats(); // Update counts
             } else {
                 const data = await response.json();
                 throw new Error(data.detail || 'Could not delete note.');
@@ -232,12 +258,13 @@ const Dashboard = () => {
                     asset_symbol: 'SOL',
                     action: 'BUY',
                     price_target: 145.20,
-                    note: 'SOL is retesting the 200 EMA on the 4H chart. Accumulating for swing trade.'
+                    note: 'SOL is retesting support. Loading swing trade position.'
                 })
             });
             if (response.ok) {
                 setToast({ message: 'Demo Trade Note created!', type: 'success' });
                 loadNotes(1);
+                loadStats();
             } else {
                 throw new Error('Failed to create demo note.');
             }
@@ -248,14 +275,8 @@ const Dashboard = () => {
         }
     };
 
-    // Calculate metrics based on current view/notes
-    const totalSignals = count;
-    const buysCount = notes.filter(n => n.action === 'BUY').length;
-    const sellsCount = notes.filter(n => n.action === 'SELL').length;
-    const watchesCount = notes.filter(n => n.action === 'WATCH').length;
-
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-955 text-slate-100 flex flex-col font-sans">
             {/* Top Navigation Bar */}
             <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -322,36 +343,36 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Dashboard Metrics Grid */}
+                {/* Dashboard Metrics Grid (pagination-resilient counts from database stats) */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
                         <div className="text-xs font-bold text-slate-450 uppercase tracking-wider">Total Notes</div>
-                        <div className="text-3xl font-bold font-display text-white mt-2">{totalSignals}</div>
-                        <div className="text-[10px] text-slate-400 mt-1.5">Across entire view</div>
+                        <div className="text-3xl font-bold font-display text-white mt-2">{stats.total}</div>
+                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
                         <div className="text-xs font-bold text-slate-450 uppercase tracking-wider flex items-center gap-1.5">
                             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                             <span>Buy Signals</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-emerald-400 mt-2">{buysCount}</div>
-                        <div className="text-[10px] text-slate-400 mt-1.5">On current page</div>
+                        <div className="text-3xl font-bold font-display text-emerald-400 mt-2">{stats.buy}</div>
+                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-450 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
                             <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
                             <span>Sell Signals</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-rose-400 mt-2">{sellsCount}</div>
-                        <div className="text-[10px] text-slate-400 mt-1.5">On current page</div>
+                        <div className="text-3xl font-bold font-display text-rose-400 mt-2">{stats.sell}</div>
+                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-450 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
                             <Eye className="w-3.5 h-3.5 text-slate-400" />
                             <span>Watch Items</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-slate-300 mt-2">{watchesCount}</div>
-                        <div className="text-[10px] text-slate-400 mt-1.5">On current page</div>
+                        <div className="text-3xl font-bold font-display text-slate-300 mt-2">{stats.watch}</div>
+                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                 </div>
 
@@ -360,7 +381,7 @@ const Dashboard = () => {
                     {/* Search Panel */}
                     <div className="p-5 border-b border-slate-900 bg-slate-900/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <form onSubmit={handleSearch} className="w-full sm:max-w-sm flex items-center relative">
-                            <span className="absolute left-3.5 text-slate-500">
+                            <span className="absolute left-3.5 text-slate-505">
                                 <Search className="w-4 h-4" />
                             </span>
                             <input
@@ -368,21 +389,21 @@ const Dashboard = () => {
                                 value={searchSymbol}
                                 onChange={(e) => setSearchSymbol(e.target.value)}
                                 placeholder="Filter by asset symbol (e.g. BTC)..."
-                                className="w-full pl-10 pr-12 py-2 border border-slate-800 bg-slate-950 text-slate-200 text-xs rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-650"
+                                className="w-full pl-10 pr-12 py-2 border border-slate-805 bg-slate-950 text-slate-200 text-xs rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-650"
                                 id="symbol-search-input"
                             />
                             {searchSymbol && (
                                 <button
                                     type="button"
                                     onClick={handleClearSearch}
-                                    className="absolute right-3.5 text-slate-500 hover:text-slate-350 cursor-pointer"
+                                    className="absolute right-3.5 text-slate-505 hover:text-slate-350 cursor-pointer"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
                             )}
                         </form>
 
-                        <div className="text-xs text-slate-400 font-medium">
+                        <div className="text-xs text-slate-450 font-medium">
                             {count === 0 ? 'No notes found' : `Showing ${notes.length} of ${count} notes`}
                         </div>
                     </div>
@@ -391,7 +412,7 @@ const Dashboard = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left text-slate-300">
                             <thead>
-                                <tr className="border-b border-slate-900 bg-slate-950/40 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                <tr className="border-b border-slate-900 bg-slate-950/40 text-[10px] uppercase font-bold text-slate-455 tracking-wider">
                                     <th className="px-6 py-4">Asset</th>
                                     <th className="px-6 py-4">Action</th>
                                     <th className="px-6 py-4">Price Target</th>
@@ -404,7 +425,7 @@ const Dashboard = () => {
                             <tbody className="divide-y divide-slate-900/60">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-500 text-sm">
+                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-550 text-sm">
                                             <div className="flex items-center justify-center gap-2">
                                                 <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
                                                 <span>Loading intelligence records...</span>
@@ -413,13 +434,12 @@ const Dashboard = () => {
                                     </tr>
                                 ) : notes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-500 text-sm">
+                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-550 text-sm">
                                             No trade notes created yet. Click "Create Note" to add one!
                                         </td>
                                     </tr>
                                 ) : (
                                     notes.map((note) => {
-                                        // Standard users edit their own. Admins can view all, but edit only their own.
                                         const canModify = note.username === user?.username;
 
                                         let actionBadge = '';
@@ -451,7 +471,7 @@ const Dashboard = () => {
                                                         </div>
                                                     </td>
                                                 )}
-                                                <td className="px-6 py-4 text-slate-350 max-w-xs md:max-w-md truncate" title={note.note}>
+                                                <td className="px-6 py-4 text-slate-355 max-w-xs md:max-w-md truncate" title={note.note}>
                                                     {note.note}
                                                 </td>
                                                 <td className="px-6 py-4 text-xs text-slate-500 font-medium">
@@ -522,7 +542,7 @@ const Dashboard = () => {
             {/* CREATE TRADE NOTE MODAL */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-slate-850 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
+                    <div className="w-full max-w-lg rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
                         <button
                             onClick={() => setShowCreateModal(false)}
                             className="absolute top-4 right-4 p-1 rounded hover:bg-slate-800 text-slate-455 hover:text-white transition-colors cursor-pointer"
@@ -533,7 +553,6 @@ const Dashboard = () => {
                         <h2 className="text-xl font-bold font-display text-white tracking-tight mb-5">Create Trade Note</h2>
 
                         <form onSubmit={handleCreateNote} className="space-y-4">
-                            {/* Symbol Input */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="asset_symbol">
                                     Asset Symbol
@@ -551,7 +570,6 @@ const Dashboard = () => {
                                 {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1">{formErrors.asset_symbol[0]}</p>}
                             </div>
 
-                            {/* Action & Price Target Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="action">
@@ -583,13 +601,12 @@ const Dashboard = () => {
                                         value={formData.price_target}
                                         onChange={handleFormChange}
                                         placeholder="Optional target"
-                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     />
                                     {formErrors.price_target && <p className="text-rose-455 text-xs mt-1">{formErrors.price_target[0]}</p>}
                                 </div>
                             </div>
 
-                            {/* Analysis Note Text */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="note">
                                     Analysis / Note Details
@@ -600,15 +617,14 @@ const Dashboard = () => {
                                     rows="4"
                                     value={formData.note}
                                     onChange={handleFormChange}
-                                    placeholder="Explain your technical setup, macro logic, or indicators..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    placeholder="Explain your technical setup..."
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 ></textarea>
                                 {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
                             </div>
 
-                            {/* Action buttons */}
-                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-850">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-855">
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
@@ -632,8 +648,8 @@ const Dashboard = () => {
 
             {/* EDIT TRADE NOTE MODAL */}
             {showEditModal && (
-                <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-slate-850 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
+                <div className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                    <div className="w-full max-w-lg rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
                         <button
                             onClick={() => setShowEditModal(false)}
                             className="absolute top-4 right-4 p-1 rounded hover:bg-slate-800 text-slate-455 hover:text-white transition-colors cursor-pointer"
@@ -644,7 +660,6 @@ const Dashboard = () => {
                         <h2 className="text-xl font-bold font-display text-white tracking-tight mb-5">Edit Trade Note</h2>
 
                         <form onSubmit={handleEditNote} className="space-y-4">
-                            {/* Symbol Input (ReadOnly optionally or editable) */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_asset_symbol">
                                     Asset Symbol
@@ -656,13 +671,12 @@ const Dashboard = () => {
                                     value={formData.asset_symbol}
                                     onChange={handleFormChange}
                                     placeholder="e.g. BTC, ETH, SOL"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 />
                                 {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1">{formErrors.asset_symbol[0]}</p>}
                             </div>
 
-                            {/* Action & Price Target Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_action">
@@ -673,7 +687,7 @@ const Dashboard = () => {
                                         name="action"
                                         value={formData.action}
                                         onChange={handleFormChange}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-805 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
                                     >
                                         <option value="BUY">BUY</option>
                                         <option value="SELL">SELL</option>
@@ -694,13 +708,12 @@ const Dashboard = () => {
                                         value={formData.price_target}
                                         onChange={handleFormChange}
                                         placeholder="Optional target"
-                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     />
                                     {formErrors.price_target && <p className="text-rose-455 text-xs mt-1">{formErrors.price_target[0]}</p>}
                                 </div>
                             </div>
 
-                            {/* Analysis Note Text */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_note">
                                     Analysis / Note Details
@@ -712,14 +725,13 @@ const Dashboard = () => {
                                     value={formData.note}
                                     onChange={handleFormChange}
                                     placeholder="Explain your technical setup..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 ></textarea>
                                 {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
                             </div>
 
-                            {/* Action buttons */}
-                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-850">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-855">
                                 <button
                                     type="button"
                                     onClick={() => setShowEditModal(false)}
@@ -744,7 +756,7 @@ const Dashboard = () => {
             {/* DELETE VERIFICATION MODAL */}
             {showDeleteModal && (
                 <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-md rounded-2xl border border-slate-850 bg-slate-900 p-6 shadow-2xl animate-zoom-in text-center">
+                    <div className="w-full max-w-md rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl animate-zoom-in text-center">
                         <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-4">
                             <AlertTriangle className="w-6 h-6" />
                         </div>

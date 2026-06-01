@@ -6,11 +6,10 @@ User = get_user_model()
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='user')
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'role')
+        fields = ('id', 'username', 'email', 'password')
 
     def validate_email(self, value):
         if not value:
@@ -20,11 +19,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Force default standard 'user' role on registration. Admin accounts must be created manually.
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            role=validated_data.get('role', 'user')
+            role='user'
         )
         return user
 
@@ -33,14 +33,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # Add custom claims into the JWT payload
+        # Standard user properties embedded in token claims
         token['username'] = user.username
         token['role'] = user.role
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        # Add custom fields in the HTTP response JSON
+        # Extra response body details for dashboard customization
         data['username'] = self.user.username
         data['role'] = self.user.role
         data['email'] = self.user.email
