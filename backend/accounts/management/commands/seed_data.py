@@ -11,16 +11,27 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write('Seeding database records...')
 
-        # Create admin superuser
+        # Create admin user with administrative staff and superuser privileges for Django Admin (/admin)
         admin_user, created = User.objects.get_or_create(
             username='admin',
             email='admin@primetrade.ai',
-            defaults={'role': 'admin'}
+            defaults={
+                'role': 'admin',
+                'is_staff': True,
+                'is_superuser': True
+            }
         )
         if created:
             admin_user.set_password('adminpassword')
             admin_user.save()
             self.stdout.write(self.style.SUCCESS('Created admin user: admin / adminpassword'))
+        else:
+            # Enforce flags on existing admin profile
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.set_password('adminpassword')
+            admin_user.save()
+            self.stdout.write(self.style.SUCCESS('Reset admin credentials and privileges.'))
 
         # Create standard analyst 1
         analyst1, created = User.objects.get_or_create(
@@ -32,6 +43,9 @@ class Command(BaseCommand):
             analyst1.set_password('analystpassword')
             analyst1.save()
             self.stdout.write(self.style.SUCCESS('Created analyst1 user: analyst1 / analystpassword'))
+        else:
+            analyst1.set_password('analystpassword')
+            analyst1.save()
 
         # Create standard analyst 2
         analyst2, created = User.objects.get_or_create(
@@ -43,6 +57,9 @@ class Command(BaseCommand):
             analyst2.set_password('analystpassword')
             analyst2.save()
             self.stdout.write(self.style.SUCCESS('Created analyst2 user: analyst2 / analystpassword'))
+        else:
+            analyst2.set_password('analystpassword')
+            analyst2.save()
 
         # Reset notes for seed run
         TradeNote.objects.all().delete()

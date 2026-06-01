@@ -4,7 +4,7 @@ import {
     Plus, Edit2, Trash2, LogOut, User, 
     TrendingUp, TrendingDown, Eye, Shield, 
     X, ChevronLeft, ChevronRight, AlertTriangle, 
-    Search, RefreshCw
+    Search, RefreshCw, PauseCircle
 } from 'lucide-react';
 import Toast from './Toast';
 
@@ -20,7 +20,7 @@ const Dashboard = () => {
     const [toast, setToast] = useState({ message: '', type: 'success' });
 
     // Database aggregate stats state
-    const [stats, setStats] = useState({ total: 0, buy: 0, sell: 0, watch: 0 });
+    const [stats, setStats] = useState({ total: 0, buy: 0, sell: 0, hold: 0, watch: 0 });
 
     // Modals visibility state
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,6 +48,7 @@ const Dashboard = () => {
                     total: data.total || 0,
                     buy: data.buy || 0,
                     sell: data.sell || 0,
+                    hold: data.hold || 0,
                     watch: data.watch || 0
                 });
             }
@@ -343,15 +344,15 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Dashboard Metrics Grid (pagination-resilient counts from database stats) */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Dashboard Metrics Grid (5-column layout displaying aggregate signals) */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
                         <div className="text-xs font-bold text-slate-450 uppercase tracking-wider">Total Notes</div>
                         <div className="text-3xl font-bold font-display text-white mt-2">{stats.total}</div>
                         <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-450 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
                             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                             <span>Buy Signals</span>
                         </div>
@@ -364,6 +365,14 @@ const Dashboard = () => {
                             <span>Sell Signals</span>
                         </div>
                         <div className="text-3xl font-bold font-display text-rose-400 mt-2">{stats.sell}</div>
+                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                    </div>
+                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
+                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
+                            <PauseCircle className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Hold Signals</span>
+                        </div>
+                        <div className="text-3xl font-bold font-display text-amber-400 mt-2">{stats.hold}</div>
                         <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
                     </div>
                     <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
@@ -403,7 +412,7 @@ const Dashboard = () => {
                             )}
                         </form>
 
-                        <div className="text-xs text-slate-450 font-medium">
+                        <div className="text-xs text-slate-455 font-medium">
                             {count === 0 ? 'No notes found' : `Showing ${notes.length} of ${count} notes`}
                         </div>
                     </div>
@@ -501,7 +510,7 @@ const Dashboard = () => {
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-[10px] text-slate-550 italic select-none">Read-only</span>
+                                                        <span className="text-[10px] text-slate-555 italic select-none">Read-only</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -518,7 +527,7 @@ const Dashboard = () => {
                             <button
                                 onClick={handlePrevPage}
                                 disabled={currentPage === 1 || loading}
-                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-955 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                                 <span>Previous</span>
@@ -529,7 +538,7 @@ const Dashboard = () => {
                             <button
                                 onClick={handleNextPage}
                                 disabled={currentPage === totalPages || loading}
-                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-805 hover:border-slate-700 bg-slate-955 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                             >
                                 <span>Next</span>
                                 <ChevronRight className="w-4 h-4" />
@@ -618,7 +627,7 @@ const Dashboard = () => {
                                     value={formData.note}
                                     onChange={handleFormChange}
                                     placeholder="Explain your technical setup..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 ></textarea>
                                 {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
@@ -671,7 +680,7 @@ const Dashboard = () => {
                                     value={formData.asset_symbol}
                                     onChange={handleFormChange}
                                     placeholder="e.g. BTC, ETH, SOL"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 />
                                 {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1">{formErrors.asset_symbol[0]}</p>}
@@ -725,7 +734,7 @@ const Dashboard = () => {
                                     value={formData.note}
                                     onChange={handleFormChange}
                                     placeholder="Explain your technical setup..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
                                     required
                                 ></textarea>
                                 {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
@@ -755,7 +764,7 @@ const Dashboard = () => {
 
             {/* DELETE VERIFICATION MODAL */}
             {showDeleteModal && (
-                <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                <div className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
                     <div className="w-full max-w-md rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl animate-zoom-in text-center">
                         <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-4">
                             <AlertTriangle className="w-6 h-6" />

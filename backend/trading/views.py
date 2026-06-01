@@ -42,11 +42,12 @@ class TradeNoteViewSet(viewsets.ModelViewSet):
         else:
             base_qs = TradeNote.objects.filter(user=user)
 
-        # Database aggregate query to keep stats pagination-resilient
+        # Database aggregate query to keep stats pagination-resilient, including HOLD signals
         stats_data = base_qs.aggregate(
             total=Count('id'),
             buy=Count('id', filter=Q(action='BUY')),
             sell=Count('id', filter=Q(action='SELL')),
+            hold=Count('id', filter=Q(action='HOLD')),
             watch=Count('id', filter=Q(action='WATCH'))
         )
         return Response(stats_data)

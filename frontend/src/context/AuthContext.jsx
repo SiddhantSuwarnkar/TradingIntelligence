@@ -95,7 +95,22 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        const refreshVal = localStorage.getItem('pt_refresh');
+        if (refreshVal) {
+            try {
+                // Inform backend to blacklist the token server-side
+                await fetch(`${API_BASE}/auth/logout/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: refreshVal })
+                });
+            } catch (error) {
+                console.error('Failed to blacklist refresh token on server logout:', error);
+            }
+        }
+
+        // Clean client credentials regardless of connection results to prevent lockouts
         setUser(null);
         setAccessToken(null);
         localStorage.removeItem('pt_user');
