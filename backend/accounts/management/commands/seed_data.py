@@ -14,7 +14,7 @@ class Command(BaseCommand):
         # Create admin user with administrative staff and superuser privileges for Django Admin (/admin)
         admin_user, created = User.objects.get_or_create(
             username='admin',
-            email='admin@primetrade.ai',
+            email='admin@nexustrade.ai',
             defaults={
                 'role': 'admin',
                 'is_staff': True,
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         # Create standard analyst 1
         analyst1, created = User.objects.get_or_create(
             username='analyst1',
-            email='analyst1@primetrade.ai',
+            email='analyst1@nexustrade.ai',
             defaults={'role': 'user'}
         )
         if created:
@@ -50,7 +50,7 @@ class Command(BaseCommand):
         # Create standard analyst 2
         analyst2, created = User.objects.get_or_create(
             username='analyst2',
-            email='analyst2@primetrade.ai',
+            email='analyst2@nexustrade.ai',
             defaults={'role': 'user'}
         )
         if created:

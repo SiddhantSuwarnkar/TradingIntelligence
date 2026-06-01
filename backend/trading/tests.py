@@ -33,19 +33,19 @@ class TradeIntelligenceTests(APITestCase):
     def setUp(self):
         self.analyst1 = User.objects.create_user(
             username='analyst1',
-            email='analyst1@primetrade.ai',
+            email='analyst1@nexustrade.ai',
             password='analystpassword123',
             role='user'
         )
         self.analyst2 = User.objects.create_user(
             username='analyst2',
-            email='analyst2@primetrade.ai',
+            email='analyst2@nexustrade.ai',
             password='analystpassword456',
             role='user'
         )
         self.admin = User.objects.create_user(
             username='admin',
-            email='admin@primetrade.ai',
+            email='admin@nexustrade.ai',
             password='adminpassword123',
             role='admin'
         )
@@ -64,7 +64,7 @@ class TradeIntelligenceTests(APITestCase):
         # 1. Password too short
         data = {
             'username': 'newuser',
-            'email': 'newuser@primetrade.ai',
+            'email': 'newuser@nexustrade.ai',
             'password': '123'
         }
         response = self.client.post(url, data, format='json')
@@ -85,7 +85,7 @@ class TradeIntelligenceTests(APITestCase):
         url = reverse('auth_register')
         data = {
             'username': 'fakeadmin',
-            'email': 'fakeadmin@primetrade.ai',
+            'email': 'fakeadmin@nexustrade.ai',
             'password': 'fakepassword123',
             'role': 'admin'
         }

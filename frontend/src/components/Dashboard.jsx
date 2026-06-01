@@ -4,7 +4,8 @@ import {
     Plus, Edit2, Trash2, LogOut, User, 
     TrendingUp, TrendingDown, Eye, Shield, 
     X, ChevronLeft, ChevronRight, AlertTriangle, 
-    Search, RefreshCw, PauseCircle
+    Search, RefreshCw, PauseCircle, Database, Calendar,
+    UserCheck, Layers, BarChart2
 } from 'lucide-react';
 import Toast from './Toast';
 
@@ -199,7 +200,6 @@ const Dashboard = () => {
         };
 
         try {
-            // REST compliance: Using PATCH for partial updates instead of PUT
             const response = await fetchWithAuth(`http://localhost:8000/api/v1/notes/${activeNote.id}/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -211,7 +211,7 @@ const Dashboard = () => {
                 setToast({ message: `Updated ${data.asset_symbol} note successfully.`, type: 'success' });
                 setShowEditModal(false);
                 loadNotes(currentPage, searchSymbol); // Keep on current page
-                loadStats(); // Update stats in case signal action has changed
+                loadStats(); // Update stats
             } else {
                 setFormErrors(data);
                 setToast({ message: 'Validation failed. Please check inputs.', type: 'error' });
@@ -233,10 +233,9 @@ const Dashboard = () => {
             if (response.status === 204) {
                 setToast({ message: 'Trade note deleted.', type: 'success' });
                 setShowDeleteModal(false);
-                // If we deleted the last item on the page, go back a page
                 const newPage = (notes.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
                 loadNotes(newPage, searchSymbol);
-                loadStats(); // Update counts
+                loadStats();
             } else {
                 const data = await response.json();
                 throw new Error(data.detail || 'Could not delete note.');
@@ -277,26 +276,32 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-955 text-slate-100 flex flex-col font-sans">
+        <div className="min-h-screen bg-brand-bg text-slate-100 flex flex-col font-sans relative">
+            {/* Ambient gradients */}
+            <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-neon-indigo/5 blur-[120px] pointer-events-none"></div>
+            <div className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-neon-cyan/5 blur-[120px] pointer-events-none"></div>
+
             {/* Top Navigation Bar */}
-            <nav className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
+            <nav className="border-b border-brand-border bg-slate-950/45 backdrop-blur-lg sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-violet-500 flex items-center justify-center shadow shadow-cyan-500/10">
-                        <TrendingUp className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-neon-indigo to-neon-cyan flex items-center justify-center shadow shadow-neon-indigo/20">
+                        <BarChart2 className="w-5.5 h-5.5 text-white" />
                     </div>
-                    <span className="font-semibold text-lg font-display text-white tracking-wide">PrimeTrade<span className="text-cyan-400">.ai</span></span>
+                    <span className="font-extrabold text-xl font-display text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300">
+                        Nexus<span className="text-neon-cyan font-semibold">Trade</span>
+                    </span>
                 </div>
 
                 <div className="flex items-center gap-4">
                     {/* User Profile Info Tag */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/50">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-border bg-slate-900/40">
                         {user?.role === 'admin' ? (
-                            <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                            <Shield className="w-3.5 h-3.5 text-neon-cyan shrink-0 animate-pulse" />
                         ) : (
-                            <User className="w-3.5 h-3.5 text-violet-400" />
+                            <User className="w-3.5 h-3.5 text-neon-purple shrink-0" />
                         )}
-                        <span className="text-xs font-semibold text-slate-350">{user?.username}</span>
-                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full ${user?.role === 'admin' ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20' : 'bg-slate-800 text-slate-400'}`}>
+                        <span className="text-xs font-semibold text-slate-200">{user?.username}</span>
+                        <span className={`text-[9px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-full ${user?.role === 'admin' ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/20' : 'bg-slate-800 text-slate-400'}`}>
                             {user?.role}
                         </span>
                     </div>
@@ -305,18 +310,18 @@ const Dashboard = () => {
                     <button
                         onClick={logout}
                         id="logout-btn"
-                        className="flex items-center gap-2 py-2 px-3.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer shadow"
+                        className="flex items-center gap-2 py-2 px-4 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-950/65 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer shadow"
                     >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-3.5 h-3.5 text-neon-rose" />
                         <span>Sign Out</span>
                     </button>
                 </div>
             </nav>
 
             {/* Dashboard Container */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-8">
+            <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-8 z-10">
                 {/* Intro & Actions Panel */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
                     <div>
                         <h1 className="text-3xl font-extrabold font-display tracking-tight text-white">Watchlist & Notes</h1>
                         <p className="text-sm text-slate-400 mt-1">Manage and track trade signals and market updates.</p>
@@ -326,17 +331,17 @@ const Dashboard = () => {
                         <button
                             onClick={handleSeedData}
                             id="demo-seed-btn"
-                            className="flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all cursor-pointer shadow"
+                            className="flex items-center gap-2 py-2.5 px-4 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-950 hover:bg-slate-900/60 text-xs font-bold text-slate-300 hover:text-slate-100 transition-all cursor-pointer shadow-lg"
                             title="Add a demo note to quickly test CRUD"
                         >
-                            <RefreshCw className="w-3.5 h-3.5" />
+                            <RefreshCw className="w-3.5 h-3.5 text-neon-cyan" />
                             <span>Quick Demo Note</span>
                         </button>
 
                         <button
                             onClick={openCreateModal}
                             id="create-note-btn"
-                            className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-xs font-bold text-white shadow shadow-cyan-500/10 hover:shadow-cyan-500/20 active:scale-[0.98] transition-all cursor-pointer"
+                            className="flex items-center gap-2 py-2.5 px-4 rounded-xl font-bold text-white btn-premium shadow-lg shadow-neon-indigo/15 hover:shadow-neon-cyan/25 active:scale-[0.98] transition-all cursor-pointer"
                         >
                             <Plus className="w-4 h-4 text-white" />
                             <span>Create Note</span>
@@ -345,52 +350,55 @@ const Dashboard = () => {
                 </div>
 
                 {/* Dashboard Metrics Grid (5-column layout displaying aggregate signals) */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-450 uppercase tracking-wider">Total Notes</div>
-                        <div className="text-3xl font-bold font-display text-white mt-2">{stats.total}</div>
-                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 animate-slide-up">
+                    <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-total">
+                        <div className="text-[10px] font-bold text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
+                            <Database className="w-3.5 h-3.5 text-neon-indigo" />
+                            <span>Total Notes</span>
+                        </div>
+                        <div className="text-3xl font-extrabold font-display text-white mt-3.5">{stats.total}</div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-2">Database Records</div>
                     </div>
-                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
-                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                    <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-buy">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-neon-emerald" />
                             <span>Buy Signals</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-emerald-400 mt-2">{stats.buy}</div>
-                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                        <div className="text-3xl font-extrabold font-display text-neon-emerald mt-3.5">{stats.buy}</div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-2">Active Recommendations</div>
                     </div>
-                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
-                            <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
+                    <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-sell">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <TrendingDown className="w-3.5 h-3.5 text-neon-rose" />
                             <span>Sell Signals</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-rose-400 mt-2">{stats.sell}</div>
-                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                        <div className="text-3xl font-extrabold font-display text-neon-rose mt-3.5">{stats.sell}</div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-2">Take Profit / Short</div>
                     </div>
-                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
-                            <PauseCircle className="w-3.5 h-3.5 text-amber-500" />
+                    <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-hold">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <PauseCircle className="w-3.5 h-3.5 text-neon-amber" />
                             <span>Hold Signals</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-amber-400 mt-2">{stats.hold}</div>
-                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                        <div className="text-3xl font-extrabold font-display text-neon-amber mt-3.5">{stats.hold}</div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-2">Consolidating Positions</div>
                     </div>
-                    <div className="p-5 rounded-2xl border border-slate-850 bg-slate-900/20 backdrop-blur-md">
-                        <div className="text-xs font-bold text-slate-455 uppercase tracking-wider flex items-center gap-1.5">
-                            <Eye className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="p-5 rounded-2xl glass-panel glass-panel-hover glow-watch">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Eye className="w-3.5 h-3.5 text-neon-cyan" />
                             <span>Watch Items</span>
                         </div>
-                        <div className="text-3xl font-bold font-display text-slate-300 mt-2">{stats.watch}</div>
-                        <div className="text-[10px] text-slate-500 mt-1.5">Across entire database</div>
+                        <div className="text-3xl font-extrabold font-display text-slate-350 mt-3.5">{stats.watch}</div>
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold mt-2">Pending technical setups</div>
                     </div>
                 </div>
 
                 {/* Filter & Table section */}
-                <div className="rounded-2xl border border-slate-900 bg-slate-900/10 backdrop-blur-xl overflow-hidden shadow-2xl">
+                <div className="rounded-2xl border border-brand-border bg-slate-900/15 backdrop-blur-xl overflow-hidden shadow-2xl animate-slide-up">
                     {/* Search Panel */}
-                    <div className="p-5 border-b border-slate-900 bg-slate-900/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <form onSubmit={handleSearch} className="w-full sm:max-w-sm flex items-center relative">
-                            <span className="absolute left-3.5 text-slate-505">
+                    <div className="p-5 border-b border-brand-border bg-slate-900/35 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <form onSubmit={handleSearch} className="w-full sm:max-w-sm flex items-center relative group">
+                            <span className="absolute left-3.5 text-slate-500 group-focus-within:text-neon-cyan transition-colors">
                                 <Search className="w-4 h-4" />
                             </span>
                             <input
@@ -398,21 +406,21 @@ const Dashboard = () => {
                                 value={searchSymbol}
                                 onChange={(e) => setSearchSymbol(e.target.value)}
                                 placeholder="Filter by asset symbol (e.g. BTC)..."
-                                className="w-full pl-10 pr-12 py-2 border border-slate-805 bg-slate-950 text-slate-200 text-xs rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-650"
+                                className="w-full pl-10 pr-12 py-2 border border-brand-border bg-slate-950/60 text-slate-200 text-xs rounded-xl focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan/30 transition-all placeholder:text-slate-650"
                                 id="symbol-search-input"
                             />
                             {searchSymbol && (
                                 <button
                                     type="button"
                                     onClick={handleClearSearch}
-                                    className="absolute right-3.5 text-slate-505 hover:text-slate-350 cursor-pointer"
+                                    className="absolute right-3.5 text-slate-450 hover:text-slate-200 cursor-pointer transition-colors"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
                             )}
                         </form>
 
-                        <div className="text-xs text-slate-455 font-medium">
+                        <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
                             {count === 0 ? 'No notes found' : `Showing ${notes.length} of ${count} notes`}
                         </div>
                     </div>
@@ -421,7 +429,7 @@ const Dashboard = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left text-slate-300">
                             <thead>
-                                <tr className="border-b border-slate-900 bg-slate-950/40 text-[10px] uppercase font-bold text-slate-455 tracking-wider">
+                                <tr className="border-b border-brand-border bg-slate-950/60 text-[10px] uppercase font-bold text-slate-400 tracking-widest">
                                     <th className="px-6 py-4">Asset</th>
                                     <th className="px-6 py-4">Action</th>
                                     <th className="px-6 py-4">Price Target</th>
@@ -431,19 +439,19 @@ const Dashboard = () => {
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-900/60">
+                            <tbody className="divide-y divide-brand-border/60 bg-slate-950/15">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-550 text-sm">
+                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-400 text-sm">
                                             <div className="flex items-center justify-center gap-2">
-                                                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                                                <span>Loading intelligence records...</span>
+                                                <RefreshCw className="w-4 h-4 animate-spin text-neon-cyan" />
+                                                <span className="font-semibold uppercase tracking-wider text-xs">Loading intelligence records...</span>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : notes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-550 text-sm">
+                                        <td colSpan={user?.role === 'admin' ? 7 : 6} className="px-6 py-12 text-center text-slate-500 text-sm">
                                             No trade notes created yet. Click "Create Note" to add one!
                                         </td>
                                     </tr>
@@ -452,65 +460,77 @@ const Dashboard = () => {
                                         const canModify = note.username === user?.username;
 
                                         let actionBadge = '';
-                                        if (note.action === 'BUY') actionBadge = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                                        else if (note.action === 'SELL') actionBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                                        else if (note.action === 'HOLD') actionBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                                        else actionBadge = 'bg-slate-800 text-slate-350 border-slate-700/50';
+                                        if (note.action === 'BUY') actionBadge = 'bg-neon-emerald/10 text-neon-emerald border-neon-emerald/20 glow-buy';
+                                        else if (note.action === 'SELL') actionBadge = 'bg-neon-rose/10 text-neon-rose border-neon-rose/20 glow-sell';
+                                        else if (note.action === 'HOLD') actionBadge = 'bg-neon-amber/10 text-neon-amber border-neon-amber/20 glow-hold';
+                                        else actionBadge = 'bg-slate-800/40 text-slate-350 border-slate-700/50';
 
                                         return (
-                                            <tr key={note.id} className="hover:bg-slate-900/10 transition-colors text-sm group">
+                                            <tr key={note.id} className="hover:bg-slate-900/25 border-b border-brand-border/60 transition-colors text-sm group">
                                                 <td className="px-6 py-4 font-bold text-white tracking-wider font-display">
-                                                    {note.asset_symbol}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded bg-slate-900/60 flex items-center justify-center border border-brand-border text-[10px] font-extrabold text-neon-cyan">
+                                                            {note.asset_symbol.substring(0, 2)}
+                                                        </div>
+                                                        <span>{note.asset_symbol}</span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${actionBadge}`}>
+                                                    <span className={`text-[9px] tracking-wide font-extrabold px-2.5 py-1 rounded-full border ${actionBadge}`}>
                                                         {note.action}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 font-mono text-slate-300">
+                                                <td className="px-6 py-4 font-mono text-slate-300 font-semibold">
                                                     {note.price_target ? `$${parseFloat(note.price_target).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}` : '—'}
                                                 </td>
                                                 {user?.role === 'admin' && (
                                                     <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1 rounded-full bg-slate-900 border border-brand-border">
+                                                                {note.user_role === 'admin' ? (
+                                                                    <Shield className="w-3 h-3 text-neon-cyan" />
+                                                                ) : (
+                                                                    <User className="w-3 h-3 text-neon-purple" />
+                                                                )}
+                                                            </div>
                                                             <span className="text-slate-300 font-semibold">{note.username}</span>
-                                                            <span className={`text-[9px] px-1 py-0.2 rounded-full uppercase ${note.user_role === 'admin' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-slate-800 text-slate-400'}`}>
-                                                                {note.user_role}
-                                                            </span>
                                                         </div>
                                                     </td>
                                                 )}
-                                                <td className="px-6 py-4 text-slate-355 max-w-xs md:max-w-md truncate" title={note.note}>
+                                                <td className="px-6 py-4 text-slate-400 max-w-xs md:max-w-md truncate font-medium" title={note.note}>
                                                     {note.note}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-slate-500 font-medium">
-                                                    {new Date(note.created_at).toLocaleDateString(undefined, {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
+                                                <td className="px-6 py-4 text-xs text-slate-500 font-semibold flex items-center gap-1.5 mt-3">
+                                                    <Calendar className="w-3 h-3 text-slate-600" />
+                                                    <span>
+                                                        {new Date(note.created_at).toLocaleDateString(undefined, {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     {canModify ? (
-                                                        <div className="flex items-center justify-end gap-2.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex items-center justify-end gap-2.5 opacity-60 group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => openEditModal(note)}
-                                                                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-all cursor-pointer"
+                                                                className="p-1.5 rounded-lg hover:bg-slate-800/80 text-slate-400 hover:text-neon-cyan hover:border hover:border-neon-cyan/20 transition-all cursor-pointer"
                                                                 title="Edit Note"
                                                             >
                                                                 <Edit2 className="w-3.5 h-3.5" />
                                                             </button>
                                                             <button
                                                                 onClick={() => openDeleteModal(note)}
-                                                                className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-all cursor-pointer"
+                                                                className="p-1.5 rounded-lg hover:bg-slate-800/80 text-slate-400 hover:text-neon-rose hover:border hover:border-neon-rose/20 transition-all cursor-pointer"
                                                                 title="Delete Note"
                                                             >
                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-[10px] text-slate-555 italic select-none">Read-only</span>
+                                                        <span className="text-[10px] text-slate-600 uppercase font-bold tracking-wider select-none">Read-only</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -523,22 +543,22 @@ const Dashboard = () => {
 
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div className="p-4 border-t border-slate-900 bg-slate-950/40 flex items-center justify-between">
+                        <div className="p-4 border-t border-brand-border bg-slate-950/40 flex items-center justify-between">
                             <button
                                 onClick={handlePrevPage}
                                 disabled={currentPage === 1 || loading}
-                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-955 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                className="flex items-center gap-1.5 py-2 px-3 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                                 <span>Previous</span>
                             </button>
-                            <span className="text-xs font-semibold text-slate-450">
+                            <span className="text-xs font-semibold text-slate-400">
                                 Page {currentPage} of {totalPages}
                             </span>
                             <button
                                 onClick={handleNextPage}
                                 disabled={currentPage === totalPages || loading}
-                                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-slate-805 hover:border-slate-700 bg-slate-955 hover:bg-slate-900 text-xs font-bold text-slate-350 hover:text-slate-200 transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                                className="flex items-center gap-1.5 py-2 px-3 rounded-xl border border-brand-border hover:border-brand-border-hover bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                             >
                                 <span>Next</span>
                                 <ChevronRight className="w-4 h-4" />
@@ -550,20 +570,20 @@ const Dashboard = () => {
 
             {/* CREATE TRADE NOTE MODAL */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                    <div className="w-full max-w-lg rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
                         <button
                             onClick={() => setShowCreateModal(false)}
-                            className="absolute top-4 right-4 p-1 rounded hover:bg-slate-800 text-slate-455 hover:text-white transition-colors cursor-pointer"
+                            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h2 className="text-xl font-bold font-display text-white tracking-tight mb-5">Create Trade Note</h2>
+                        <h2 className="text-xl font-extrabold font-display text-white tracking-tight mb-5">Create Trade Note</h2>
 
                         <form onSubmit={handleCreateNote} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="asset_symbol">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="asset_symbol">
                                     Asset Symbol
                                 </label>
                                 <input
@@ -573,15 +593,15 @@ const Dashboard = () => {
                                     value={formData.asset_symbol}
                                     onChange={handleFormChange}
                                     placeholder="e.g. BTC, ETH, SOL"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-600 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     required
                                 />
-                                {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1">{formErrors.asset_symbol[0]}</p>}
+                                {formErrors.asset_symbol && <p className="text-rose-450 text-xs mt-1 font-semibold">{formErrors.asset_symbol[0]}</p>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="action">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="action">
                                         Signal Action
                                     </label>
                                     <select
@@ -589,7 +609,7 @@ const Dashboard = () => {
                                         name="action"
                                         value={formData.action}
                                         onChange={handleFormChange}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan/30 transition-all cursor-pointer font-bold"
                                     >
                                         <option value="BUY">BUY</option>
                                         <option value="SELL">SELL</option>
@@ -599,7 +619,7 @@ const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="price_target">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="price_target">
                                         Price Target (USD)
                                     </label>
                                     <input
@@ -610,14 +630,14 @@ const Dashboard = () => {
                                         value={formData.price_target}
                                         onChange={handleFormChange}
                                         placeholder="Optional target"
-                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     />
-                                    {formErrors.price_target && <p className="text-rose-455 text-xs mt-1">{formErrors.price_target[0]}</p>}
+                                    {formErrors.price_target && <p className="text-rose-455 text-xs mt-1 font-semibold">{formErrors.price_target[0]}</p>}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="note">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="note">
                                     Analysis / Note Details
                                 </label>
                                 <textarea
@@ -627,17 +647,17 @@ const Dashboard = () => {
                                     value={formData.note}
                                     onChange={handleFormChange}
                                     placeholder="Explain your technical setup..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     required
                                 ></textarea>
-                                {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
+                                {formErrors.note && <p className="text-rose-455 text-xs mt-1 font-semibold">{formErrors.note[0]}</p>}
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-855">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-border">
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}
-                                    className="py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs font-bold text-slate-350 hover:text-white transition-all cursor-pointer"
+                                    className="py-2.5 px-4 rounded-xl border border-brand-border bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
                                 >
                                     Cancel
                                 </button>
@@ -645,9 +665,9 @@ const Dashboard = () => {
                                     type="submit"
                                     disabled={modalSubmitting}
                                     id="submit-create-btn"
-                                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-xs font-bold text-white shadow shadow-cyan-500/10 hover:shadow-cyan-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                                    className="py-2.5 px-4 rounded-xl font-bold text-white btn-premium shadow shadow-neon-indigo/10 hover:shadow-neon-cyan/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                                 >
-                                    {modalSubmitting ? 'Creating...' : 'Create Note'}
+                                    <span>{modalSubmitting ? 'Creating...' : 'Create Note'}</span>
                                 </button>
                             </div>
                         </form>
@@ -657,20 +677,20 @@ const Dashboard = () => {
 
             {/* EDIT TRADE NOTE MODAL */}
             {showEditModal && (
-                <div className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-lg rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl relative animate-zoom-in">
+                <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                    <div className="w-full max-w-lg rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl relative animate-scale-up">
                         <button
                             onClick={() => setShowEditModal(false)}
-                            className="absolute top-4 right-4 p-1 rounded hover:bg-slate-800 text-slate-455 hover:text-white transition-colors cursor-pointer"
+                            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h2 className="text-xl font-bold font-display text-white tracking-tight mb-5">Edit Trade Note</h2>
+                        <h2 className="text-xl font-extrabold font-display text-white tracking-tight mb-5">Edit Trade Note</h2>
 
                         <form onSubmit={handleEditNote} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_asset_symbol">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="edit_asset_symbol">
                                     Asset Symbol
                                 </label>
                                 <input
@@ -680,15 +700,15 @@ const Dashboard = () => {
                                     value={formData.asset_symbol}
                                     onChange={handleFormChange}
                                     placeholder="e.g. BTC, ETH, SOL"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.asset_symbol ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     required
                                 />
-                                {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1">{formErrors.asset_symbol[0]}</p>}
+                                {formErrors.asset_symbol && <p className="text-rose-455 text-xs mt-1 font-semibold">{formErrors.asset_symbol[0]}</p>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_action">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="edit_action">
                                         Signal Action
                                     </label>
                                     <select
@@ -696,7 +716,7 @@ const Dashboard = () => {
                                         name="action"
                                         value={formData.action}
                                         onChange={handleFormChange}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-805 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
+                                        className="w-full px-3.5 py-2.5 rounded-xl border border-brand-border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan/30 transition-all cursor-pointer font-bold"
                                     >
                                         <option value="BUY">BUY</option>
                                         <option value="SELL">SELL</option>
@@ -706,7 +726,7 @@ const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_price_target">
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="edit_price_target">
                                         Price Target (USD)
                                     </label>
                                     <input
@@ -717,14 +737,14 @@ const Dashboard = () => {
                                         value={formData.price_target}
                                         onChange={handleFormChange}
                                         placeholder="Optional target"
-                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.price_target ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     />
-                                    {formErrors.price_target && <p className="text-rose-455 text-xs mt-1">{formErrors.price_target[0]}</p>}
+                                    {formErrors.price_target && <p className="text-rose-455 text-xs mt-1 font-semibold">{formErrors.price_target[0]}</p>}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" htmlFor="edit_note">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2" htmlFor="edit_note">
                                     Analysis / Note Details
                                 </label>
                                 <textarea
@@ -734,17 +754,17 @@ const Dashboard = () => {
                                     value={formData.note}
                                     onChange={handleFormChange}
                                     placeholder="Explain your technical setup..."
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-955 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-805 focus:border-cyan-500 focus:ring-cyan-500'}`}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-slate-650 ${formErrors.note ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' : 'border-brand-border focus:border-neon-cyan focus:ring-neon-cyan/30'}`}
                                     required
                                 ></textarea>
-                                {formErrors.note && <p className="text-rose-455 text-xs mt-1">{formErrors.note[0]}</p>}
+                                {formErrors.note && <p className="text-rose-455 text-xs mt-1 font-semibold">{formErrors.note[0]}</p>}
                             </div>
 
-                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-855">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-border">
                                 <button
                                     type="button"
                                     onClick={() => setShowEditModal(false)}
-                                    className="py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs font-bold text-slate-350 hover:text-white transition-all cursor-pointer"
+                                    className="py-2.5 px-4 rounded-xl border border-brand-border bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
                                 >
                                     Cancel
                                 </button>
@@ -752,9 +772,9 @@ const Dashboard = () => {
                                     type="submit"
                                     disabled={modalSubmitting}
                                     id="submit-edit-btn"
-                                    className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-xs font-bold text-white shadow shadow-cyan-500/10 hover:shadow-cyan-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                                    className="py-2.5 px-4 rounded-xl font-bold text-white btn-premium shadow shadow-neon-indigo/10 hover:shadow-neon-cyan/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                                 >
-                                    {modalSubmitting ? 'Updating...' : 'Save Changes'}
+                                    <span>{modalSubmitting ? 'Updating...' : 'Save Changes'}</span>
                                 </button>
                             </div>
                         </form>
@@ -764,22 +784,22 @@ const Dashboard = () => {
 
             {/* DELETE VERIFICATION MODAL */}
             {showDeleteModal && (
-                <div className="fixed inset-0 bg-slate-955/70 backdrop-blur-sm flex items-center justify-center p-4 z-40">
-                    <div className="w-full max-w-md rounded-2xl border border-slate-855 bg-slate-900 p-6 shadow-2xl animate-zoom-in text-center">
-                        <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto mb-4">
+                <div className="fixed inset-0 bg-slate-955/80 backdrop-blur-sm flex items-center justify-center p-4 z-40">
+                    <div className="w-full max-w-md rounded-2xl border border-brand-border bg-slate-900/90 backdrop-blur-xl p-6 shadow-2xl animate-scale-up text-center">
+                        <div className="w-12 h-12 rounded-full bg-neon-rose/10 flex items-center justify-center text-neon-rose mx-auto mb-4 border border-neon-rose/20">
                             <AlertTriangle className="w-6 h-6" />
                         </div>
 
-                        <h2 className="text-lg font-bold font-display text-white mb-2">Delete Trade Note?</h2>
-                        <p className="text-sm text-slate-400 mb-6">
-                            Are you sure you want to remove the <span className="font-bold text-white">{activeNote?.asset_symbol}</span> note? This action is permanent and cannot be undone.
+                        <h2 className="text-lg font-extrabold font-display text-white mb-2">Delete Trade Note?</h2>
+                        <p className="text-sm text-slate-400 mb-6 font-medium">
+                            Are you sure you want to remove the <span className="font-extrabold text-neon-rose">{activeNote?.asset_symbol}</span> note? This action is permanent and cannot be undone.
                         </p>
 
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 type="button"
                                 onClick={() => setShowDeleteModal(false)}
-                                className="py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs font-bold text-slate-350 hover:text-white transition-all cursor-pointer"
+                                className="py-2.5 px-4 rounded-xl border border-brand-border bg-slate-950 hover:bg-slate-900 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -788,9 +808,9 @@ const Dashboard = () => {
                                 onClick={handleDeleteNote}
                                 disabled={modalSubmitting}
                                 id="confirm-delete-btn"
-                                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white shadow-lg shadow-rose-650/10 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                                className="py-2.5 px-4 rounded-xl bg-neon-rose hover:bg-rose-500 text-xs font-bold text-white shadow-lg shadow-neon-rose/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                             >
-                                {modalSubmitting ? 'Deleting...' : 'Delete Note'}
+                                <span>{modalSubmitting ? 'Deleting...' : 'Delete Note'}</span>
                             </button>
                         </div>
                     </div>
